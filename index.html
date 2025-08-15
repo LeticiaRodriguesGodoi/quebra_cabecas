@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quebra-Cabeça Deslizante</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            border: 5px solid #a0aec0;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .puzzle-piece {
+            width: 100%;
+            height: 100%;
+            background-size: 500% 500%;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+            border: 2px solid #a0aec0;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #e2e8f0;
+        }
+
+        .empty-piece {
+            background: none;
+            border: 2px solid transparent;
+            cursor: default;
+        }
+
+        .image-container {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #source-image {
+            width: 250px;
+            height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            margin-top: 1rem;
+        }
+        
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #4c51bf;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #5a62c9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .message-box {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background-color: #d1fae5;
+            color: #065f46;
+            font-weight: bold;
+            font-size: 1.25rem;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        
+        .message-box.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            #source-image {
+                width: 200px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Quebra-Cabeça Deslizante</h1>
+    <div id="puzzle-grid" class="puzzle-grid"></div>
+    <div id="message-box" class="message-box"></div>
+    <button id="shuffle-button">Embaralhar Peças</button>
+    <div class="image-container">
+        <h2>Imagem Original</h2>
+        <img id="source-image" src="https://static.vecteezy.com/ti/vetor-gratis/p1/2189173-diagrama-mostrando-o-processo-de-fotossintese-na-planta-gratis-vetor.jpg" alt="Diagrama de fotossíntese">
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const puzzleGrid = document.getElementById('puzzle-grid');
+        const shuffleButton = document.getElementById('shuffle-button');
+        const messageBox = document.getElementById('message-box');
+        const sourceImage = document.getElementById('source-image');
+        
+        // Define as configurações do quebra-cabeça
+        const rows = 5;
+        const cols = 5;
+        const totalPieces = rows * cols; // 25 peças no total (24 com imagem + 1 vazia)
+        const imageUrl = sourceImage.src;
+
+        // Funções do jogo
+        function createPuzzle() {
+            // Limpa o grid
+            puzzleGrid.innerHTML = '';
+            
+            // Define o tamanho da grade com base na imagem de origem
+            const gridSize = 450;
+            puzzleGrid.style.width = `${gridSize}px`;
+            puzzleGrid.style.height = `${gridSize}px`;
+
+            // Cria as peças do quebra-cabeça
+            let pieceElements = [];
+            for (let i = 0; i < totalPieces - 1; i++) {
+                const piece = document.createElement('div');
+                piece.classList.add('puzzle-piece');
+                piece.dataset.originalIndex = i; // Armazena o índice original da peça
+
+                // Calcula a posição do background para cada peça
+                const x = (i % cols) * (100 / (cols - 1));
+                const y = Math.floor(i / cols) * (100 / (rows - 1));
+                
+                piece.style.backgroundImage = `url(${imageUrl})`;
+                piece.style.backgroundSize = `${cols * 100}% ${rows * 100}%`;
+                piece.style.backgroundPosition = `${x}% ${y}%`;
+                
+                pieceElements.push(piece);
+            }
+
+            // Cria a peça vazia
+            const emptyPiece = document.createElement('div');
+            emptyPiece.classList.add('empty-piece');
+            emptyPiece.dataset.originalIndex = totalPieces - 1;
+            pieceElements.push(emptyPiece);
+
+            // Embaralha e adiciona as peças ao grid
+            shufflePieces(pieceElements);
+
+            // Adiciona o event listener para cliques na grade
+            puzzleGrid.addEventListener('click', handlePieceClick);
+        }
+
+        // Embaralha as peças de forma a garantir que o quebra-cabeça seja sempre solucionável
+        function shufflePieces(pieces) {
+            let shuffledPieces = [...pieces];
+            do {
+                // Embaralhamento Fisher-Yates
+                for (let i = shuffledPieces.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledPieces[i], shuffledPieces[j]] = [shuffledPieces[j], shuffledPieces[i]];
+                }
+            } while (!isSolvable(shuffledPieces));
+
+            // Adiciona as peças embaralhadas ao DOM
+            shuffledPieces.forEach(piece => puzzleGrid.appendChild(piece));
+        }
+
+        // Verifica se a configuração atual é solucionável
+        function isSolvable(pieces) {
+            const gridSize = Math.sqrt(pieces.length);
+            let inversions = 0;
+            let flatPieces = pieces.map(p => parseInt(p.dataset.originalIndex));
+            
+            // Remove o espaço vazio para o cálculo de inversões
+            const emptyIndex = flatPieces.indexOf(24);
+            const emptyRow = Math.floor(emptyIndex / gridSize);
+            flatPieces.splice(emptyIndex, 1);
+            
+            for (let i = 0; i < flatPieces.length; i++) {
+                for (let j = i + 1; j < flatPieces.length; j++) {
+                    if (flatPieces[i] > flatPieces[j]) {
+                        inversions++;
+                    }
+                }
+            }
+
+            // Para grades de largura ímpar (como 5x5), o quebra-cabeça é solucionável se o número de inversões for par.
+            return inversions % 2 === 0;
+        }
+
+        // Manipulador de clique nas peças
+        function handlePieceClick(e) {
+            const clickedPiece = e.target;
+            // Se o clique for na grade e não em uma peça, sai da função
+            if (!clickedPiece.classList.contains('puzzle-piece')) return;
+
+            const pieces = Array.from(puzzleGrid.children);
+            const emptyPiece = puzzleGrid.querySelector('.empty-piece');
+            
+            const clickedIndex = pieces.indexOf(clickedPiece);
+            const emptyIndex = pieces.indexOf(emptyPiece);
+
+            // Verifica se a peça clicada está adjacente à peça vazia
+            if (isAdjacent(clickedIndex, emptyIndex)) {
+                // Move a peça clicada para a posição do espaço vazio
+                if (clickedIndex < emptyIndex) {
+                    puzzleGrid.insertBefore(emptyPiece, clickedPiece);
+                } else {
+                    puzzleGrid.insertBefore(emptyPiece, clickedPiece.nextSibling);
+                }
+                
+                // Verifica se o quebra-cabeça foi resolvido
+                checkWin();
+            }
+        }
+
+        // Verifica se duas peças são adjacentes (horizontal ou verticalmente)
+        function isAdjacent(index1, index2) {
+            const row1 = Math.floor(index1 / cols);
+            const col1 = index1 % cols;
+            const row2 = Math.floor(index2 / cols);
+            const col2 = index2 % cols;
+
+            const rowDiff = Math.abs(row1 - row2);
+            const colDiff = Math.abs(col1 - col2);
+
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+        
+        // Função para verificar se o quebra-cabeça está resolvido
+        function checkWin() {
+            let solved = true;
+            const pieces = Array.from(puzzleGrid.children);
+            for (let i = 0; i < pieces.length; i++) {
+                if (parseInt(pieces[i].dataset.originalIndex) !== i) {
+                    solved = false;
+                    break;
+                }
+            }
+
+            if (solved) {
+                messageBox.textContent = "Parabéns, você resolveu o quebra-cabeça!";
+                messageBox.classList.add('visible');
+            }
+        }
+
+        // Inicializa o quebra-cabeça ao carregar a página
+        createPuzzle();
+
+        // Adiciona o event listener para o botão de embaralhar
+        shuffleButton.addEventListener('click', () => {
+            messageBox.classList.remove('visible');
+            createPuzzle();
+        });
+    });
+</script>
+
+</body>
+</html>
